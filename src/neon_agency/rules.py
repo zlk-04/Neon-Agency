@@ -1,4 +1,14 @@
-BASE_ACTIONS = {"flee", "call_police", "fight_back", "record_video", "ignore"}
+BASE_ACTIONS = {
+    "acknowledge",
+    "approve",
+    "call_police",
+    "confront",
+    "fight_back",
+    "flee",
+    "ignore",
+    "record_video",
+    "thank",
+}
 POLICE_ACTIONS = BASE_ACTIONS | {"investigate"}
 
 

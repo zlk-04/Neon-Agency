@@ -8,6 +8,9 @@ def test_help_lists_available_commands():
     output = handle_command(simulation, "help")
 
     assert "attack <entity_id>" in output
+    assert "steal <entity_id>" in output
+    assert "threaten <entity_id>" in output
+    assert "talk <entity_id>" in output
     assert "memories <entity_id>" in output
     assert "quit" in output
 
@@ -19,6 +22,9 @@ def test_status_shows_reputation_and_entities():
 
     assert "player_violence_score: 0" in output
     assert "police_attention: 0" in output
+    assert "player_kindness_score: 0" in output
+    assert "player_theft_score: 0" in output
+    assert "civilian_trust: 0" in output
     assert "mira: Mira (civilian)" in output
     assert "officer_chen: Officer Chen (police)" in output
 
@@ -60,3 +66,43 @@ def test_invalid_attack_target_is_reported():
     output = handle_command(simulation, "attack nobody")
 
     assert "Unknown entity: nobody" in output
+
+
+def test_help_command_updates_kindness_reputation():
+    simulation = create_default_street()
+
+    output = handle_command(simulation, "help mira")
+
+    assert "Action: help Mira" in output
+    assert "Mira chooses: thank" in output
+    assert simulation.city_reputation.player_kindness_score == 6
+
+
+def test_steal_command_updates_theft_reputation():
+    simulation = create_default_street()
+
+    output = handle_command(simulation, "steal rook")
+
+    assert "Action: steal Rook" in output
+    assert "Rook chooses: call_police" in output
+    assert simulation.city_reputation.player_theft_score == 8
+
+
+def test_threaten_command_updates_violence_reputation():
+    simulation = create_default_street()
+
+    output = handle_command(simulation, "threaten mira")
+
+    assert "Action: threaten Mira" in output
+    assert "Mira chooses: flee + call_police" in output
+    assert simulation.city_reputation.player_violence_score == 4
+
+
+def test_talk_command_creates_social_memory():
+    simulation = create_default_street()
+
+    output = handle_command(simulation, "talk mira")
+
+    assert "Action: talk Mira" in output
+    assert "Mira chooses: acknowledge" in output
+    assert simulation.entities["mira"].memories[0].event_kind == "talk"

@@ -1,12 +1,25 @@
-from neon_agency.simulation import simulate_player_assault
+from neon_agency.simulation import simulate_player_action
 
 
 HELP_TEXT = """Available commands:
 - help
 - status
 - attack <entity_id>
+- help <entity_id>
+- steal <entity_id>
+- threaten <entity_id>
+- talk <entity_id>
 - memories <entity_id>
 - quit"""
+
+
+ACTION_COMMANDS = {
+    "attack": "assault",
+    "help": "help",
+    "steal": "steal",
+    "threaten": "threaten",
+    "talk": "talk",
+}
 
 
 def handle_command(simulation, command):
@@ -15,12 +28,12 @@ def handle_command(simulation, command):
         return ""
 
     name = parts[0].lower()
-    if name == "help":
+    if name == "help" and len(parts) == 1:
         return HELP_TEXT
     if name == "status":
         return format_status(simulation)
-    if name == "attack":
-        return _handle_entity_command(simulation, parts, _attack_entity)
+    if name in ACTION_COMMANDS:
+        return _handle_entity_command(simulation, parts, _run_player_action)
     if name == "memories":
         return _handle_entity_command(simulation, parts, _format_entity_memories)
     if name in {"quit", "exit"}:
@@ -51,7 +64,10 @@ def format_status(simulation):
     lines = [
         "City reputation:",
         f"- player_violence_score: {simulation.city_reputation.player_violence_score}",
+        f"- player_kindness_score: {simulation.city_reputation.player_kindness_score}",
+        f"- player_theft_score: {simulation.city_reputation.player_theft_score}",
         f"- police_attention: {simulation.city_reputation.police_attention}",
+        f"- civilian_trust: {simulation.city_reputation.civilian_trust}",
         "",
         "Entities:",
     ]
@@ -60,11 +76,12 @@ def format_status(simulation):
     return "\n".join(lines)
 
 
-def format_assault_result(simulation, result):
+def format_action_result(simulation, result):
     target = simulation.entities[result.event.target_id]
+    action = _display_action(result.event.kind)
     lines = [
-        f"Action: attack {target.name}",
-        f"{target.name} was attacked by {result.event.actor_id}.",
+        f"Action: {action} {target.name}",
+        f"{target.name} experienced {result.event.kind} by {result.event.actor_id}.",
         "",
         "Reactions:",
     ]
@@ -77,10 +94,17 @@ def format_assault_result(simulation, result):
             "",
             "City reputation updated:",
             f"- player_violence_score: {simulation.city_reputation.player_violence_score}",
+            f"- player_kindness_score: {simulation.city_reputation.player_kindness_score}",
+            f"- player_theft_score: {simulation.city_reputation.player_theft_score}",
             f"- police_attention: {simulation.city_reputation.police_attention}",
+            f"- civilian_trust: {simulation.city_reputation.civilian_trust}",
         ]
     )
     return "\n".join(lines)
+
+
+def format_assault_result(simulation, result):
+    return format_action_result(simulation, result)
 
 
 def _handle_entity_command(simulation, parts, handler):
@@ -89,15 +113,15 @@ def _handle_entity_command(simulation, parts, handler):
     entity_id = parts[1].lower()
     if entity_id not in simulation.entities or entity_id == "player":
         return f"Unknown entity: {entity_id}"
-    return handler(simulation, entity_id)
+    return handler(simulation, entity_id, parts[0].lower())
 
 
-def _attack_entity(simulation, entity_id):
-    result = simulate_player_assault(simulation, target_id=entity_id)
-    return format_assault_result(simulation, result)
+def _run_player_action(simulation, entity_id, command_name):
+    result = simulate_player_action(simulation, action_kind=ACTION_COMMANDS[command_name], target_id=entity_id)
+    return format_action_result(simulation, result)
 
 
-def _format_entity_memories(simulation, entity_id):
+def _format_entity_memories(simulation, entity_id, command_name=None):
     entity = simulation.entities[entity_id]
     lines = [f"Memories for {entity.name}:"]
     if not entity.memories:
@@ -113,3 +137,9 @@ def _create_simulation():
     from neon_agency.simulation import create_default_street
 
     return create_default_street()
+
+
+def _display_action(event_kind):
+    if event_kind == "assault":
+        return "attack"
+    return event_kind

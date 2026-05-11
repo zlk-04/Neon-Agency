@@ -43,6 +43,10 @@ Available commands:
 help
 status
 attack <entity_id>
+help <entity_id>
+steal <entity_id>
+threaten <entity_id>
+talk <entity_id>
 memories <entity_id>
 quit
 ```

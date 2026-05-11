@@ -1,4 +1,4 @@
-from neon_agency.simulation import create_default_street, simulate_player_assault
+from neon_agency.simulation import create_default_street, simulate_player_action, simulate_player_assault
 import subprocess
 import sys
 
@@ -67,3 +67,53 @@ def test_default_entrypoint_runs_interactive_shell_commands():
     assert "Neon Agency interactive sandbox" in result.stdout
     assert "player_violence_score: 0" in result.stdout
     assert "Goodbye." in result.stdout
+
+
+def test_help_action_builds_trust_and_kindness_memory():
+    simulation = create_default_street()
+
+    result = simulate_player_action(simulation, action_kind="help", target_id="mira")
+
+    assert result.event.kind == "help"
+    assert result.reactions_by_entity["mira"].actions == ("thank",)
+    assert result.reactions_by_entity["rook"].actions == ("approve",)
+    assert simulation.city_reputation.player_kindness_score == 6
+    assert simulation.city_reputation.civilian_trust == 4
+    assert simulation.entities["mira"].memories[0].event_kind == "help"
+
+
+def test_steal_action_increases_theft_and_police_attention():
+    simulation = create_default_street()
+
+    result = simulate_player_action(simulation, action_kind="steal", target_id="rook")
+
+    assert result.event.kind == "steal"
+    assert result.reactions_by_entity["rook"].actions == ("call_police",)
+    assert result.reactions_by_entity["mira"].actions == ("call_police",)
+    assert result.reactions_by_entity["officer_chen"].actions == ("investigate",)
+    assert simulation.city_reputation.player_theft_score == 8
+    assert simulation.city_reputation.police_attention == 7
+
+
+def test_threaten_action_creates_intimidation_reactions():
+    simulation = create_default_street()
+
+    result = simulate_player_action(simulation, action_kind="threaten", target_id="mira")
+
+    assert result.event.kind == "threaten"
+    assert result.reactions_by_entity["mira"].actions == ("flee", "call_police")
+    assert result.reactions_by_entity["rook"].actions == ("record_video",)
+    assert simulation.city_reputation.player_violence_score == 4
+    assert simulation.city_reputation.police_attention == 7
+
+
+def test_talk_action_creates_social_memory_without_police_attention():
+    simulation = create_default_street()
+
+    result = simulate_player_action(simulation, action_kind="talk", target_id="mira")
+
+    assert result.event.kind == "talk"
+    assert result.reactions_by_entity["mira"].actions == ("acknowledge",)
+    assert "officer_chen" not in result.reactions_by_entity
+    assert simulation.city_reputation.civilian_trust == 1
+    assert simulation.city_reputation.police_attention == 0

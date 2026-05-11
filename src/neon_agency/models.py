@@ -36,7 +36,10 @@ class Entity:
 @dataclass
 class CityReputation:
     player_violence_score: int = 0
+    player_kindness_score: int = 0
+    player_theft_score: int = 0
     police_attention: int = 0
+    civilian_trust: int = 0
 
 
 @dataclass(frozen=True)

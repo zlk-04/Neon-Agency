@@ -1,7 +1,16 @@
 from neon_agency.decision import decide_reaction
-from neon_agency.events import AssaultEvent
+from neon_agency.events import AssaultEvent, PlayerActionEvent
 from neon_agency.models import CityReputation, Entity, Personality, Simulation, SimulationResult
-from neon_agency.perception import perceive_assault
+from neon_agency.perception import perceive_event
+
+
+ACTION_SEVERITY = {
+    "assault": 10,
+    "help": 2,
+    "steal": 8,
+    "threaten": 4,
+    "talk": 1,
+}
 
 
 def create_default_street():
@@ -41,6 +50,13 @@ def create_default_street():
 
 
 def simulate_player_assault(simulation, target_id):
+    return simulate_player_action(simulation, action_kind="assault", target_id=target_id)
+
+
+def simulate_player_action(simulation, action_kind, target_id):
+    if action_kind not in ACTION_SEVERITY:
+        raise ValueError(f"Unsupported action kind: {action_kind}")
+
     target = simulation.entities[target_id]
     witness_ids = tuple(
         entity_id
@@ -49,26 +65,43 @@ def simulate_player_assault(simulation, target_id):
         and entity.location == target.location
         and not entity.is_police
     )
-    event = AssaultEvent(
-        actor_id="player",
-        target_id=target_id,
-        location=target.location,
-        severity=10,
-        direct_witness_ids=witness_ids,
-    )
+    event_class = AssaultEvent if action_kind == "assault" else PlayerActionEvent
+    event_kwargs = {
+        "actor_id": "player",
+        "target_id": target_id,
+        "location": target.location,
+        "severity": ACTION_SEVERITY[action_kind],
+        "direct_witness_ids": witness_ids,
+    }
+    if action_kind != "assault":
+        event_kwargs["kind"] = action_kind
+    event = event_class(**event_kwargs)
 
-    perceptions = perceive_assault(simulation, event)
+    perceptions = perceive_event(simulation, event)
     reactions = {
         entity_id: decide_reaction(simulation.entities[entity_id], event, perception)
         for entity_id, perception in perceptions.items()
     }
-    _apply_reputation(simulation, reactions)
+    _apply_reputation(simulation, event, reactions)
 
     return SimulationResult(event=event, reactions_by_entity=reactions)
 
 
-def _apply_reputation(simulation, reactions):
-    simulation.city_reputation.player_violence_score += 10
+def _apply_reputation(simulation, event, reactions):
+    if event.kind == "assault":
+        simulation.city_reputation.player_violence_score += 10
+    elif event.kind == "help":
+        simulation.city_reputation.player_kindness_score += 6
+        simulation.city_reputation.civilian_trust += 4
+    elif event.kind == "steal":
+        simulation.city_reputation.player_theft_score += 8
+        simulation.city_reputation.civilian_trust -= 3
+    elif event.kind == "threaten":
+        simulation.city_reputation.player_violence_score += 4
+        simulation.city_reputation.civilian_trust -= 2
+    elif event.kind == "talk":
+        simulation.city_reputation.civilian_trust += 1
+
     if any("call_police" in reaction.actions for reaction in reactions.values()):
         simulation.city_reputation.police_attention += 5
     if any("investigate" in reaction.actions for reaction in reactions.values()):
