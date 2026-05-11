@@ -1,4 +1,4 @@
-from neon_agency.dialogue import build_dialogue_context, build_dialogue_prompt, generate_dialogue
+from neon_agency.dialogue import build_dialogue_context, build_dialogue_prompt, generate_dialogue, generate_dialogue_result
 from neon_agency.events import PlayerActionEvent
 from neon_agency.models import Entity, Personality, Reaction
 
@@ -108,6 +108,17 @@ def test_generate_dialogue_uses_provider_response_when_available():
     assert provider.prompts
 
 
+def test_generate_dialogue_result_marks_provider_source():
+    entity = make_entity()
+    reaction = Reaction(entity_id="mira", actions=("thank",), reason="positive response to help")
+
+    result = generate_dialogue_result(entity, make_event("help"), reaction, provider=FakeProvider("Generated line."))
+
+    assert result.text == "Generated line."
+    assert result.source == "deepseek"
+    assert result.error == ""
+
+
 def test_generate_dialogue_falls_back_when_provider_returns_blank():
     entity = make_entity()
     reaction = Reaction(entity_id="mira", actions=("thank",), reason="positive response to help")
@@ -117,6 +128,17 @@ def test_generate_dialogue_falls_back_when_provider_returns_blank():
     assert dialogue == "Thanks. I will remember that you helped me."
 
 
+def test_generate_dialogue_result_marks_blank_provider_fallback():
+    entity = make_entity()
+    reaction = Reaction(entity_id="mira", actions=("thank",), reason="positive response to help")
+
+    result = generate_dialogue_result(entity, make_event("help"), reaction, provider=FakeProvider("   "))
+
+    assert result.text == "Thanks. I will remember that you helped me."
+    assert result.source == "template"
+    assert result.error == "provider returned blank dialogue"
+
+
 def test_generate_dialogue_falls_back_when_provider_fails():
     entity = make_entity()
     reaction = Reaction(entity_id="mira", actions=("thank",), reason="positive response to help")
@@ -124,3 +146,14 @@ def test_generate_dialogue_falls_back_when_provider_fails():
     dialogue = generate_dialogue(entity, make_event("help"), reaction, provider=FailingProvider())
 
     assert dialogue == "Thanks. I will remember that you helped me."
+
+
+def test_generate_dialogue_result_marks_provider_exception_fallback():
+    entity = make_entity()
+    reaction = Reaction(entity_id="mira", actions=("thank",), reason="positive response to help")
+
+    result = generate_dialogue_result(entity, make_event("help"), reaction, provider=FailingProvider())
+
+    assert result.text == "Thanks. I will remember that you helped me."
+    assert result.source == "template"
+    assert "provider failed" in result.error

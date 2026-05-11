@@ -62,6 +62,8 @@ class Reaction:
     actions: Tuple[str, ...]
     reason: str
     dialogue: str = ""
+    dialogue_source: str = "template"
+    dialogue_error: str = ""
 
 
 @dataclass

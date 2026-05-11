@@ -3,6 +3,13 @@ from typing import Tuple
 
 
 @dataclass(frozen=True)
+class DialogueResult:
+    text: str
+    source: str
+    error: str = ""
+
+
+@dataclass(frozen=True)
 class DialogueContext:
     npc_name: str
     npc_role: str
@@ -64,16 +71,31 @@ def build_dialogue_prompt(context):
 
 
 def generate_dialogue(entity, event, reaction, provider=None):
+    return generate_dialogue_result(entity, event, reaction, provider=provider).text
+
+
+def generate_dialogue_result(entity, event, reaction, provider=None):
     if provider is not None:
         prompt = build_dialogue_prompt(build_dialogue_context(entity, event, reaction))
         try:
             generated = provider.generate(prompt).strip()
-        except Exception:
+        except Exception as exc:
             generated = ""
+            error = str(exc) or exc.__class__.__name__
+        else:
+            error = ""
         if generated:
-            return generated
+            return DialogueResult(text=generated, source="deepseek")
+        if not error:
+            error = "provider returned blank dialogue"
 
-    return generate_template_dialogue(entity, event, reaction)
+        return DialogueResult(
+            text=generate_template_dialogue(entity, event, reaction),
+            source="template",
+            error=error,
+        )
+
+    return DialogueResult(text=generate_template_dialogue(entity, event, reaction), source="template")
 
 
 def generate_template_dialogue(entity, event, reaction):

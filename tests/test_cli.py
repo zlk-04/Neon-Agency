@@ -77,8 +77,33 @@ def test_help_command_updates_kindness_reputation():
 
     assert "Action: help Mira" in output
     assert "Mira chooses: thank" in output
-    assert 'Mira says: "Thanks. I will remember that you helped me."' in output
+    assert 'Mira says [template]: "Thanks. I will remember that you helped me."' in output
     assert simulation.city_reputation.player_kindness_score == 6
+
+
+def test_cli_output_marks_provider_generated_dialogue():
+    class Provider:
+        def generate(self, prompt):
+            return "Generated line."
+
+    simulation = create_default_street()
+
+    output = handle_command(simulation, "help mira", dialogue_provider=Provider())
+
+    assert 'Mira says [deepseek]: "Generated line."' in output
+
+
+def test_cli_output_marks_template_fallback_reason():
+    class Provider:
+        def generate(self, prompt):
+            raise RuntimeError("network down")
+
+    simulation = create_default_street()
+
+    output = handle_command(simulation, "help mira", dialogue_provider=Provider())
+
+    assert 'Mira says [template]: "Thanks. I will remember that you helped me."' in output
+    assert "dialogue fallback: network down" in output
 
 
 def test_steal_command_updates_theft_reputation():

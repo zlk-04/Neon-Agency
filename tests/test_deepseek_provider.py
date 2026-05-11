@@ -40,7 +40,7 @@ def test_deepseek_provider_builds_request_and_parses_response():
     request, timeout = opener.requests[0]
     body = json.loads(request.data.decode("utf-8"))
     assert line == "Generated line."
-    assert timeout == 20
+    assert timeout == 8
     assert request.full_url == "https://api.deepseek.com/chat/completions"
     assert request.headers["Authorization"] == "Bearer secret"
     assert body["model"] == "deepseek-v4-pro"

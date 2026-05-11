@@ -3,7 +3,7 @@ from urllib import request
 
 
 class DeepSeekDialogueProvider:
-    def __init__(self, config, opener=None, timeout=20, temperature=0.7, max_tokens=80):
+    def __init__(self, config, opener=None, timeout=8, temperature=0.7, max_tokens=80):
         self.config = config
         self.opener = opener or request.urlopen
         self.timeout = timeout
