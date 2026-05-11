@@ -67,7 +67,7 @@ def simulate_player_assault(simulation, target_id):
     return simulate_player_action(simulation, action_kind="assault", target_id=target_id)
 
 
-def simulate_player_action(simulation, action_kind, target_id):
+def simulate_player_action(simulation, action_kind, target_id, dialogue_provider=None):
     if action_kind not in ACTION_SEVERITY:
         raise ValueError(f"Unsupported action kind: {action_kind}")
 
@@ -97,7 +97,7 @@ def simulate_player_action(simulation, action_kind, target_id):
         entity_id: decide_reaction(simulation.entities[entity_id], event, perception)
         for entity_id, perception in perceptions.items()
     }
-    reactions = _attach_dialogue(simulation, event, reactions)
+    reactions = _attach_dialogue(simulation, event, reactions, dialogue_provider)
     _apply_reputation(simulation, event, reactions)
 
     return SimulationResult(event=event, reactions_by_entity=reactions)
@@ -110,9 +110,12 @@ def _apply_relationships(simulation, event, perceptions):
         entity.relationship_to_player.apply(**delta)
 
 
-def _attach_dialogue(simulation, event, reactions):
+def _attach_dialogue(simulation, event, reactions, dialogue_provider=None):
     return {
-        entity_id: _with_dialogue(reaction, generate_dialogue(simulation.entities[entity_id], event, reaction))
+        entity_id: _with_dialogue(
+            reaction,
+            generate_dialogue(simulation.entities[entity_id], event, reaction, provider=dialogue_provider),
+        )
         for entity_id, reaction in reactions.items()
     }
 

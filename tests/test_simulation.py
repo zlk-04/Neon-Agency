@@ -210,3 +210,20 @@ def test_reactions_include_dialogue_lines():
     result = simulate_player_action(simulation, action_kind="help", target_id="mira")
 
     assert result.reactions_by_entity["mira"].dialogue == "Thanks. I will remember that you helped me."
+
+
+def test_simulation_accepts_dialogue_provider():
+    class Provider:
+        def generate(self, prompt):
+            return "Generated from structured context."
+
+    simulation = create_default_street()
+
+    result = simulate_player_action(
+        simulation,
+        action_kind="help",
+        target_id="mira",
+        dialogue_provider=Provider(),
+    )
+
+    assert result.reactions_by_entity["mira"].dialogue == "Generated from structured context."

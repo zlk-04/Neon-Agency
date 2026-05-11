@@ -12,6 +12,8 @@ Phase 1 focuses on the social reaction loop:
 4. A deterministic decision engine selects allowed reactions.
 5. The city reputation changes.
 
+Later phases add per-NPC relationships, relationship-influenced decisions, template dialogue, and an LLM-ready dialogue adapter with deterministic fallback.
+
 ## Setup
 
 ```powershell
