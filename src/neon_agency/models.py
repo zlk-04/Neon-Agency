@@ -19,13 +19,27 @@ class Memory:
 
 
 @dataclass
+class Relationship:
+    trust: int = 0
+    fear: int = 0
+    resentment: int = 0
+    familiarity: int = 0
+
+    def apply(self, trust=0, fear=0, resentment=0, familiarity=0):
+        self.trust += trust
+        self.fear += fear
+        self.resentment += resentment
+        self.familiarity += familiarity
+
+
+@dataclass
 class Entity:
     entity_id: str
     name: str
     role: str
     location: str
     personality: Personality
-    relationship_to_player: float = 0.0
+    relationship_to_player: Relationship = field(default_factory=Relationship)
     memories: list = field(default_factory=list)
 
     @property

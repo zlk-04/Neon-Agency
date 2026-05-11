@@ -48,5 +48,7 @@ steal <entity_id>
 threaten <entity_id>
 talk <entity_id>
 memories <entity_id>
+relationship <entity_id>
+relationships
 quit
 ```

@@ -12,6 +12,19 @@ ACTION_SEVERITY = {
     "talk": 1,
 }
 
+RELATIONSHIP_DELTAS = {
+    ("help", "target"): {"trust": 8, "familiarity": 2},
+    ("help", "witnessed"): {"trust": 2, "familiarity": 1},
+    ("assault", "victim"): {"fear": 8, "resentment": 6, "familiarity": 2},
+    ("assault", "witnessed"): {"fear": 3, "resentment": 1, "familiarity": 1},
+    ("steal", "target"): {"fear": 2, "resentment": 8, "familiarity": 2},
+    ("steal", "witnessed"): {"resentment": 2, "familiarity": 1},
+    ("threaten", "target"): {"fear": 7, "resentment": 4, "familiarity": 2},
+    ("threaten", "witnessed"): {"fear": 2, "familiarity": 1},
+    ("talk", "target"): {"trust": 1, "familiarity": 3},
+    ("talk", "witnessed"): {"familiarity": 1},
+}
+
 
 def create_default_street():
     return Simulation(
@@ -78,6 +91,7 @@ def simulate_player_action(simulation, action_kind, target_id):
     event = event_class(**event_kwargs)
 
     perceptions = perceive_event(simulation, event)
+    _apply_relationships(simulation, event, perceptions)
     reactions = {
         entity_id: decide_reaction(simulation.entities[entity_id], event, perception)
         for entity_id, perception in perceptions.items()
@@ -85,6 +99,13 @@ def simulate_player_action(simulation, action_kind, target_id):
     _apply_reputation(simulation, event, reactions)
 
     return SimulationResult(event=event, reactions_by_entity=reactions)
+
+
+def _apply_relationships(simulation, event, perceptions):
+    for entity_id, perception in perceptions.items():
+        entity = simulation.entities[entity_id]
+        delta = RELATIONSHIP_DELTAS.get((event.kind, perception), {})
+        entity.relationship_to_player.apply(**delta)
 
 
 def _apply_reputation(simulation, event, reactions):

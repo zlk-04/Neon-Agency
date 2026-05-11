@@ -12,6 +12,8 @@ def test_help_lists_available_commands():
     assert "threaten <entity_id>" in output
     assert "talk <entity_id>" in output
     assert "memories <entity_id>" in output
+    assert "relationship <entity_id>" in output
+    assert "relationships" in output
     assert "quit" in output
 
 
@@ -106,3 +108,27 @@ def test_talk_command_creates_social_memory():
     assert "Action: talk Mira" in output
     assert "Mira chooses: acknowledge" in output
     assert simulation.entities["mira"].memories[0].event_kind == "talk"
+
+
+def test_relationship_command_shows_single_npc_relationship():
+    simulation = create_default_street()
+    handle_command(simulation, "help mira")
+
+    output = handle_command(simulation, "relationship mira")
+
+    assert "Relationship for Mira:" in output
+    assert "trust: 8" in output
+    assert "fear: 0" in output
+    assert "resentment: 0" in output
+    assert "familiarity: 2" in output
+
+
+def test_relationships_command_shows_all_npc_relationships():
+    simulation = create_default_street()
+    handle_command(simulation, "threaten mira")
+
+    output = handle_command(simulation, "relationships")
+
+    assert "Relationships:" in output
+    assert "mira: trust=0 fear=7 resentment=4 familiarity=2" in output
+    assert "rook: trust=0 fear=2 resentment=0 familiarity=1" in output

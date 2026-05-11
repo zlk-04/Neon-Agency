@@ -10,6 +10,8 @@ HELP_TEXT = """Available commands:
 - threaten <entity_id>
 - talk <entity_id>
 - memories <entity_id>
+- relationship <entity_id>
+- relationships
 - quit"""
 
 
@@ -32,10 +34,14 @@ def handle_command(simulation, command):
         return HELP_TEXT
     if name == "status":
         return format_status(simulation)
+    if name == "relationships":
+        return format_relationships(simulation)
     if name in ACTION_COMMANDS:
         return _handle_entity_command(simulation, parts, _run_player_action)
     if name == "memories":
         return _handle_entity_command(simulation, parts, _format_entity_memories)
+    if name == "relationship":
+        return _handle_entity_command(simulation, parts, _format_entity_relationship)
     if name in {"quit", "exit"}:
         return "Goodbye."
     return f"Unknown command: {name}\nType 'help' to see available commands."
@@ -107,6 +113,21 @@ def format_assault_result(simulation, result):
     return format_action_result(simulation, result)
 
 
+def format_relationships(simulation):
+    lines = ["Relationships:"]
+    for entity_id, entity in simulation.entities.items():
+        if entity_id == "player":
+            continue
+        relationship = entity.relationship_to_player
+        lines.append(
+            f"- {entity_id}: trust={relationship.trust} "
+            f"fear={relationship.fear} "
+            f"resentment={relationship.resentment} "
+            f"familiarity={relationship.familiarity}"
+        )
+    return "\n".join(lines)
+
+
 def _handle_entity_command(simulation, parts, handler):
     if len(parts) != 2:
         return f"Usage: {parts[0]} <entity_id>"
@@ -131,6 +152,20 @@ def _format_entity_memories(simulation, entity_id, command_name=None):
     for memory in entity.memories:
         lines.append(f"- {memory.perception} {memory.event_kind} by {memory.actor_id} against {memory.target_id}")
     return "\n".join(lines)
+
+
+def _format_entity_relationship(simulation, entity_id, command_name=None):
+    entity = simulation.entities[entity_id]
+    relationship = entity.relationship_to_player
+    return "\n".join(
+        [
+            f"Relationship for {entity.name}:",
+            f"- trust: {relationship.trust}",
+            f"- fear: {relationship.fear}",
+            f"- resentment: {relationship.resentment}",
+            f"- familiarity: {relationship.familiarity}",
+        ]
+    )
 
 
 def _create_simulation():

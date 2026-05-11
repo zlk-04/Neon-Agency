@@ -117,3 +117,43 @@ def test_talk_action_creates_social_memory_without_police_attention():
     assert "officer_chen" not in result.reactions_by_entity
     assert simulation.city_reputation.civilian_trust == 1
     assert simulation.city_reputation.police_attention == 0
+
+
+def test_help_action_improves_target_and_witness_relationships():
+    simulation = create_default_street()
+
+    simulate_player_action(simulation, action_kind="help", target_id="mira")
+
+    mira_relationship = simulation.entities["mira"].relationship_to_player
+    rook_relationship = simulation.entities["rook"].relationship_to_player
+
+    assert mira_relationship.trust == 8
+    assert mira_relationship.familiarity == 2
+    assert rook_relationship.trust == 2
+    assert rook_relationship.familiarity == 1
+
+
+def test_harmful_actions_create_personal_fear_and_resentment():
+    simulation = create_default_street()
+
+    simulate_player_action(simulation, action_kind="assault", target_id="mira")
+    simulate_player_action(simulation, action_kind="steal", target_id="rook")
+    simulate_player_action(simulation, action_kind="threaten", target_id="mira")
+
+    mira_relationship = simulation.entities["mira"].relationship_to_player
+    rook_relationship = simulation.entities["rook"].relationship_to_player
+
+    assert mira_relationship.fear == 15
+    assert mira_relationship.resentment == 12
+    assert rook_relationship.fear == 7
+    assert rook_relationship.resentment == 9
+
+
+def test_talk_action_increases_target_familiarity_and_trust():
+    simulation = create_default_street()
+
+    simulate_player_action(simulation, action_kind="talk", target_id="rook")
+
+    relationship = simulation.entities["rook"].relationship_to_player
+    assert relationship.familiarity == 3
+    assert relationship.trust == 1
