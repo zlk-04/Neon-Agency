@@ -43,7 +43,7 @@ def test_rules_prevent_civilians_from_investigating_as_police():
 
 def test_cli_demo_runs_from_installed_package():
     result = subprocess.run(
-        [sys.executable, "-m", "neon_agency.main"],
+        [sys.executable, "-m", "neon_agency.main", "--demo"],
         capture_output=True,
         text=True,
         check=False,
@@ -52,3 +52,18 @@ def test_cli_demo_runs_from_installed_package():
     assert result.returncode == 0
     assert "Action: attack Mira" in result.stdout
     assert "Officer Chen chooses: investigate" in result.stdout
+
+
+def test_default_entrypoint_runs_interactive_shell_commands():
+    result = subprocess.run(
+        [sys.executable, "-m", "neon_agency.main"],
+        input="status\nquit\n",
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "Neon Agency interactive sandbox" in result.stdout
+    assert "player_violence_score: 0" in result.stdout
+    assert "Goodbye." in result.stdout

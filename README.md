@@ -28,5 +28,21 @@ python -m venv .venv
 ## Run Demo
 
 ```powershell
+.\.venv\Scripts\python.exe -m neon_agency.main --demo
+```
+
+## Run Interactive Sandbox
+
+```powershell
 .\.venv\Scripts\python.exe -m neon_agency.main
+```
+
+Available commands:
+
+```txt
+help
+status
+attack <entity_id>
+memories <entity_id>
+quit
 ```
