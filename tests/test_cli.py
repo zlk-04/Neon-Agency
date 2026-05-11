@@ -86,7 +86,7 @@ def test_steal_command_updates_theft_reputation():
     output = handle_command(simulation, "steal rook")
 
     assert "Action: steal Rook" in output
-    assert "Rook chooses: call_police" in output
+    assert "Rook chooses: confront" in output
     assert simulation.city_reputation.player_theft_score == 8
 
 

@@ -6,8 +6,10 @@ BASE_ACTIONS = {
     "fight_back",
     "flee",
     "ignore",
+    "question",
     "record_video",
     "thank",
+    "warmly_greet",
 }
 POLICE_ACTIONS = BASE_ACTIONS | {"investigate"}
 

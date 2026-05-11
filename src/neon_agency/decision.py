@@ -2,6 +2,12 @@ from neon_agency.models import Reaction
 from neon_agency.rules import filter_allowed
 
 
+HIGH_TRUST = 8
+HIGH_FEAR = 10
+HIGH_RESENTMENT = 8
+HARMFUL_EVENTS = {"assault", "steal", "threaten"}
+
+
 def decide_reaction(entity, event, perception):
     if event.kind in {"assault", "threaten"} and perception in {"victim", "target"}:
         actions = _threatened_target_actions(entity)
@@ -13,7 +19,7 @@ def decide_reaction(entity, event, perception):
         actions = ("thank",)
         reason = "positive response to help"
     elif event.kind == "talk" and perception == "target":
-        actions = ("acknowledge",)
+        actions = _talk_target_actions(entity)
         reason = "social response"
     elif entity.is_police:
         actions = ("investigate",)
@@ -33,6 +39,12 @@ def decide_reaction(entity, event, perception):
 
 
 def _threatened_target_actions(entity):
+    relationship = entity.relationship_to_player
+    if relationship.fear >= HIGH_FEAR:
+        return ("flee",)
+    if relationship.trust >= HIGH_TRUST:
+        return ("question",)
+
     traits = entity.personality
     if traits.aggression >= 0.75 and traits.bravery >= 0.65:
         return ("fight_back",)
@@ -42,13 +54,23 @@ def _threatened_target_actions(entity):
 
 
 def _theft_target_actions(entity):
+    if entity.relationship_to_player.resentment >= HIGH_RESENTMENT:
+        return ("confront",)
     if entity.personality.lawfulness >= 0.3:
         return ("call_police",)
     return ("confront",)
 
 
+def _talk_target_actions(entity):
+    if entity.relationship_to_player.trust >= HIGH_TRUST:
+        return ("warmly_greet",)
+    return ("acknowledge",)
+
+
 def _witness_actions(entity, event):
     traits = entity.personality
+    if event.kind in HARMFUL_EVENTS and entity.relationship_to_player.resentment >= HIGH_RESENTMENT:
+        return ("confront",)
     if event.kind == "help":
         return ("approve",)
     if event.kind == "talk":

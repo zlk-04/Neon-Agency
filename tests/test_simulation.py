@@ -88,7 +88,7 @@ def test_steal_action_increases_theft_and_police_attention():
     result = simulate_player_action(simulation, action_kind="steal", target_id="rook")
 
     assert result.event.kind == "steal"
-    assert result.reactions_by_entity["rook"].actions == ("call_police",)
+    assert result.reactions_by_entity["rook"].actions == ("confront",)
     assert result.reactions_by_entity["mira"].actions == ("call_police",)
     assert result.reactions_by_entity["officer_chen"].actions == ("investigate",)
     assert simulation.city_reputation.player_theft_score == 8
@@ -157,3 +157,48 @@ def test_talk_action_increases_target_familiarity_and_trust():
     relationship = simulation.entities["rook"].relationship_to_player
     assert relationship.familiarity == 3
     assert relationship.trust == 1
+
+
+def test_high_trust_target_questions_threat_instead_of_calling_police():
+    simulation = create_default_street()
+    simulation.entities["mira"].relationship_to_player.trust = 8
+
+    result = simulate_player_action(simulation, action_kind="threaten", target_id="mira")
+
+    assert result.reactions_by_entity["mira"].actions == ("question",)
+
+
+def test_high_fear_target_flees_without_calling_police():
+    simulation = create_default_street()
+    simulation.entities["mira"].relationship_to_player.fear = 10
+
+    result = simulate_player_action(simulation, action_kind="threaten", target_id="mira")
+
+    assert result.reactions_by_entity["mira"].actions == ("flee",)
+
+
+def test_high_resentment_witness_confronts_harmful_event():
+    simulation = create_default_street()
+    simulation.entities["rook"].relationship_to_player.resentment = 8
+
+    result = simulate_player_action(simulation, action_kind="threaten", target_id="mira")
+
+    assert result.reactions_by_entity["rook"].actions == ("confront",)
+
+
+def test_high_trust_target_warmly_greets_player_in_conversation():
+    simulation = create_default_street()
+    simulation.entities["mira"].relationship_to_player.trust = 8
+
+    result = simulate_player_action(simulation, action_kind="talk", target_id="mira")
+
+    assert result.reactions_by_entity["mira"].actions == ("warmly_greet",)
+
+
+def test_high_resentment_theft_target_confronts_player():
+    simulation = create_default_street()
+    simulation.entities["rook"].relationship_to_player.resentment = 8
+
+    result = simulate_player_action(simulation, action_kind="steal", target_id="rook")
+
+    assert result.reactions_by_entity["rook"].actions == ("confront",)
