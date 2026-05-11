@@ -1,4 +1,4 @@
-from neon_agency.cli import handle_command
+from neon_agency.cli import create_dialogue_provider, handle_command
 from neon_agency.simulation import create_default_street
 
 
@@ -133,3 +133,21 @@ def test_relationships_command_shows_all_npc_relationships():
     assert "Relationships:" in output
     assert "mira: trust=0 fear=7 resentment=4 familiarity=2" in output
     assert "rook: trust=0 fear=2 resentment=0 familiarity=1" in output
+
+
+def test_create_dialogue_provider_returns_none_without_config(tmp_path, monkeypatch):
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+
+    provider = create_dialogue_provider(tmp_path / ".env")
+
+    assert provider is None
+
+
+def test_create_dialogue_provider_returns_deepseek_provider_with_config(tmp_path, monkeypatch):
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    env_file = tmp_path / ".env"
+    env_file.write_text("DEEPSEEK_API_KEY=test-key\n", encoding="utf-8")
+
+    provider = create_dialogue_provider(env_file)
+
+    assert provider is not None

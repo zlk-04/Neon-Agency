@@ -24,7 +24,7 @@ ACTION_COMMANDS = {
 }
 
 
-def handle_command(simulation, command):
+def handle_command(simulation, command, dialogue_provider=None):
     parts = command.strip().split()
     if not parts:
         return ""
@@ -37,7 +37,7 @@ def handle_command(simulation, command):
     if name == "relationships":
         return format_relationships(simulation)
     if name in ACTION_COMMANDS:
-        return _handle_entity_command(simulation, parts, _run_player_action)
+        return _handle_entity_command(simulation, parts, _run_player_action, dialogue_provider=dialogue_provider)
     if name == "memories":
         return _handle_entity_command(simulation, parts, _format_entity_memories)
     if name == "relationship":
@@ -48,8 +48,8 @@ def handle_command(simulation, command):
 
 
 def run_shell(input_func=input, output_func=print):
-    simulation = None
     simulation = _create_simulation()
+    dialogue_provider = create_dialogue_provider()
     output_func("Neon Agency interactive sandbox. Type 'help' for commands.")
 
     while True:
@@ -59,7 +59,7 @@ def run_shell(input_func=input, output_func=print):
             output_func("Goodbye.")
             return
 
-        output = handle_command(simulation, command)
+        output = handle_command(simulation, command, dialogue_provider=dialogue_provider)
         if output:
             output_func(output)
         if command.strip().lower() in {"quit", "exit"}:
@@ -130,21 +130,36 @@ def format_relationships(simulation):
     return "\n".join(lines)
 
 
-def _handle_entity_command(simulation, parts, handler):
+def create_dialogue_provider(env_path=".env"):
+    from neon_agency.config import load_deepseek_config
+    from neon_agency.providers.deepseek import DeepSeekDialogueProvider
+
+    config = load_deepseek_config(env_path)
+    if config is None:
+        return None
+    return DeepSeekDialogueProvider(config)
+
+
+def _handle_entity_command(simulation, parts, handler, dialogue_provider=None):
     if len(parts) != 2:
         return f"Usage: {parts[0]} <entity_id>"
     entity_id = parts[1].lower()
     if entity_id not in simulation.entities or entity_id == "player":
         return f"Unknown entity: {entity_id}"
-    return handler(simulation, entity_id, parts[0].lower())
+    return handler(simulation, entity_id, parts[0].lower(), dialogue_provider=dialogue_provider)
 
 
-def _run_player_action(simulation, entity_id, command_name):
-    result = simulate_player_action(simulation, action_kind=ACTION_COMMANDS[command_name], target_id=entity_id)
+def _run_player_action(simulation, entity_id, command_name, dialogue_provider=None):
+    result = simulate_player_action(
+        simulation,
+        action_kind=ACTION_COMMANDS[command_name],
+        target_id=entity_id,
+        dialogue_provider=dialogue_provider,
+    )
     return format_action_result(simulation, result)
 
 
-def _format_entity_memories(simulation, entity_id, command_name=None):
+def _format_entity_memories(simulation, entity_id, command_name=None, dialogue_provider=None):
     entity = simulation.entities[entity_id]
     lines = [f"Memories for {entity.name}:"]
     if not entity.memories:
@@ -156,7 +171,7 @@ def _format_entity_memories(simulation, entity_id, command_name=None):
     return "\n".join(lines)
 
 
-def _format_entity_relationship(simulation, entity_id, command_name=None):
+def _format_entity_relationship(simulation, entity_id, command_name=None, dialogue_provider=None):
     entity = simulation.entities[entity_id]
     relationship = entity.relationship_to_player
     return "\n".join(

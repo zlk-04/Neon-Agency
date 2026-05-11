@@ -39,6 +39,17 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m neon_agency.main
 ```
 
+## DeepSeek Dialogue
+
+Template dialogue works without any API key. To enable DeepSeek-generated NPC lines, create a local `.env` file:
+
+```txt
+DEEPSEEK_API_KEY=your_key_here
+DEEPSEEK_MODEL=deepseek-v4-pro
+```
+
+`.env` is ignored by git and should not be committed.
+
 Available commands:
 
 ```txt
