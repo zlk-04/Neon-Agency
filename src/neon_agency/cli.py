@@ -95,6 +95,8 @@ def format_action_result(simulation, result):
         entity = simulation.entities[reaction.entity_id]
         actions = " + ".join(reaction.actions)
         lines.append(f"- {entity.name} chooses: {actions} ({reaction.reason})")
+        if reaction.dialogue:
+            lines.append(f'  {entity.name} says: "{reaction.dialogue}"')
     lines.extend(
         [
             "",

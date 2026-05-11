@@ -1,6 +1,7 @@
 from neon_agency.decision import decide_reaction
+from neon_agency.dialogue import generate_dialogue
 from neon_agency.events import AssaultEvent, PlayerActionEvent
-from neon_agency.models import CityReputation, Entity, Personality, Simulation, SimulationResult
+from neon_agency.models import CityReputation, Entity, Personality, Reaction, Simulation, SimulationResult
 from neon_agency.perception import perceive_event
 
 
@@ -96,6 +97,7 @@ def simulate_player_action(simulation, action_kind, target_id):
         entity_id: decide_reaction(simulation.entities[entity_id], event, perception)
         for entity_id, perception in perceptions.items()
     }
+    reactions = _attach_dialogue(simulation, event, reactions)
     _apply_reputation(simulation, event, reactions)
 
     return SimulationResult(event=event, reactions_by_entity=reactions)
@@ -106,6 +108,22 @@ def _apply_relationships(simulation, event, perceptions):
         entity = simulation.entities[entity_id]
         delta = RELATIONSHIP_DELTAS.get((event.kind, perception), {})
         entity.relationship_to_player.apply(**delta)
+
+
+def _attach_dialogue(simulation, event, reactions):
+    return {
+        entity_id: _with_dialogue(reaction, generate_dialogue(simulation.entities[entity_id], event, reaction))
+        for entity_id, reaction in reactions.items()
+    }
+
+
+def _with_dialogue(reaction, dialogue):
+    return Reaction(
+        entity_id=reaction.entity_id,
+        actions=reaction.actions,
+        reason=reaction.reason,
+        dialogue=dialogue,
+    )
 
 
 def _apply_reputation(simulation, event, reactions):

@@ -61,6 +61,7 @@ class Reaction:
     entity_id: str
     actions: Tuple[str, ...]
     reason: str
+    dialogue: str = ""
 
 
 @dataclass

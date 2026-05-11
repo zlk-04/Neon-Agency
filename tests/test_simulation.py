@@ -202,3 +202,11 @@ def test_high_resentment_theft_target_confronts_player():
     result = simulate_player_action(simulation, action_kind="steal", target_id="rook")
 
     assert result.reactions_by_entity["rook"].actions == ("confront",)
+
+
+def test_reactions_include_dialogue_lines():
+    simulation = create_default_street()
+
+    result = simulate_player_action(simulation, action_kind="help", target_id="mira")
+
+    assert result.reactions_by_entity["mira"].dialogue == "Thanks. I will remember that you helped me."

@@ -77,6 +77,7 @@ def test_help_command_updates_kindness_reputation():
 
     assert "Action: help Mira" in output
     assert "Mira chooses: thank" in output
+    assert 'Mira says: "Thanks. I will remember that you helped me."' in output
     assert simulation.city_reputation.player_kindness_score == 6
 
 
