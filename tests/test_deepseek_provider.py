@@ -46,4 +46,16 @@ def test_deepseek_provider_builds_request_and_parses_response():
     assert body["model"] == "deepseek-v4-pro"
     assert body["messages"][0]["content"] == "Prompt text"
     assert body["temperature"] == 0.7
-    assert body["max_tokens"] == 80
+    assert body["max_tokens"] == 160
+
+
+def test_deepseek_provider_uses_reasoning_content_when_content_is_blank():
+    opener = FakeOpener({"choices": [{"message": {"content": "", "reasoning_content": "Generated from reasoning."}}]})
+    provider = DeepSeekDialogueProvider(
+        DeepSeekConfig(api_key="secret", model="deepseek-v4-flash", base_url="https://api.deepseek.com"),
+        opener=opener,
+    )
+
+    line = provider.generate("Prompt text")
+
+    assert line == "Generated from reasoning."

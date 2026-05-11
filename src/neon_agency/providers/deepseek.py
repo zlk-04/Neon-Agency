@@ -3,7 +3,7 @@ from urllib import request
 
 
 class DeepSeekDialogueProvider:
-    def __init__(self, config, opener=None, timeout=8, temperature=0.7, max_tokens=80):
+    def __init__(self, config, opener=None, timeout=8, temperature=0.7, max_tokens=160):
         self.config = config
         self.opener = opener or request.urlopen
         self.timeout = timeout
@@ -29,4 +29,5 @@ class DeepSeekDialogueProvider:
 
         with self.opener(api_request, timeout=self.timeout) as response:
             data = json.loads(response.read().decode("utf-8"))
-        return data["choices"][0]["message"]["content"]
+        message = data["choices"][0]["message"]
+        return message.get("content") or message.get("reasoning_content") or ""
