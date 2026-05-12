@@ -51,6 +51,7 @@ def build_dialogue_prompt(context):
         [
             "Write one short in-character NPC line for a game simulation.",
             "Use only the provided state. Do not invent new actions or facts.",
+            "Do not explain your reasoning, task, or interpretation.",
             f"NPC: {context.npc_name}",
             f"Role: {context.npc_role}",
             f"Event: {context.event_kind} by {context.actor_id} targeting {context.target_id}",
@@ -85,6 +86,12 @@ def generate_dialogue_result(entity, event, reaction, provider=None):
         else:
             error = ""
         if generated:
+            if _looks_like_reasoning_analysis(generated):
+                return DialogueResult(
+                    text=generate_template_dialogue(entity, event, reaction),
+                    source="template",
+                    error="provider returned reasoning analysis instead of dialogue",
+                )
             return DialogueResult(text=generated, source="deepseek")
         if not error:
             error = "provider returned blank dialogue"
@@ -127,3 +134,15 @@ def generate_template_dialogue(entity, event, reaction):
     if "approve" in actions:
         return "That was decent of you."
     return ""
+
+
+def _looks_like_reasoning_analysis(text):
+    lowered = text.lower()
+    analysis_markers = (
+        "we need to generate",
+        "need to generate",
+        "single line of dialogue",
+        "the npc",
+        "reacting to the player",
+    )
+    return sum(marker in lowered for marker in analysis_markers) >= 2

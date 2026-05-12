@@ -80,6 +80,7 @@ def test_prompt_includes_event_relationship_reaction_and_memory():
     assert "Reaction: question" in prompt
     assert "Recent memories:" in prompt
     assert "target help by player against mira" in prompt
+    assert "Do not explain your reasoning" in prompt
 
 
 class FakeProvider:
@@ -157,3 +158,18 @@ def test_generate_dialogue_result_marks_provider_exception_fallback():
     assert result.text == "Thanks. I will remember that you helped me."
     assert result.source == "template"
     assert "provider failed" in result.error
+
+
+def test_generate_dialogue_falls_back_when_provider_returns_reasoning_analysis():
+    entity = make_entity()
+    reaction = Reaction(entity_id="mira", actions=("approve",), reason="civilian witness response")
+    provider = FakeProvider(
+        "We need to generate a single line of dialogue from Mira, the civilian NPC, "
+        "reacting to the player helping officer_chen."
+    )
+
+    result = generate_dialogue_result(entity, make_event("help"), reaction, provider=provider)
+
+    assert result.text == "That was decent of you."
+    assert result.source == "template"
+    assert result.error == "provider returned reasoning analysis instead of dialogue"
