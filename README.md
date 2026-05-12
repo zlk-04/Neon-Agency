@@ -47,6 +47,8 @@ python -m venv .venv
 
 Default address: `http://127.0.0.1:8765`
 
+Open `http://127.0.0.1:8765/` in a browser to use the local control deck UI.
+
 Endpoints:
 
 ```txt

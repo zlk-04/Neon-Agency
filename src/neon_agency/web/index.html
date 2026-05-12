@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Neon Agency Control Deck</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070914;
+      --panel: rgba(16, 22, 43, 0.86);
+      --panel-strong: rgba(24, 35, 66, 0.94);
+      --cyan: #3df2ff;
+      --pink: #ff4fd8;
+      --green: #70ff9b;
+      --amber: #ffd166;
+      --text: #eff6ff;
+      --muted: #93a4bd;
+      --danger: #ff6b6b;
+      --border: rgba(61, 242, 255, 0.22);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Segoe UI, system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 18% 12%, rgba(255, 79, 216, 0.22), transparent 30%),
+        radial-gradient(circle at 82% 6%, rgba(61, 242, 255, 0.18), transparent 28%),
+        linear-gradient(135deg, #060713 0%, #0c1328 52%, #12091f 100%);
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      margin-bottom: 6px;
+      letter-spacing: 0.03em;
+      text-shadow: 0 0 24px rgba(61, 242, 255, 0.38);
+    }
+
+    .subtitle { color: var(--muted); margin-bottom: 0; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(61, 242, 255, 0.08);
+      font-size: 0.9rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 0.9fr 1.2fr 1fr;
+      gap: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      background: var(--panel);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(14px);
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+    }
+
+    .metric strong { color: var(--text); }
+
+    .entity-card {
+      margin-top: 12px;
+      padding: 13px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .entity-card h3 {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .tag {
+      color: var(--cyan);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .relationship-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .controls {
+      display: grid;
+      gap: 14px;
+    }
+
+    select, button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      background: var(--panel-strong);
+      font: inherit;
+    }
+
+    select { border: 1px solid var(--border); }
+
+    button {
+      cursor: pointer;
+      border: 1px solid rgba(61, 242, 255, 0.24);
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: var(--cyan);
+      background: rgba(61, 242, 255, 0.14);
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .action-grid button:first-child { color: var(--green); }
+    .action-grid button:nth-child(2), .action-grid button:nth-child(4) { color: var(--danger); }
+    .action-grid button:nth-child(3) { color: var(--amber); }
+
+    #reset-button { color: var(--pink); }
+
+    .event-card, .reaction-card {
+      padding: 13px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-top: 12px;
+    }
+
+    .reaction-card blockquote {
+      margin: 10px 0 0;
+      padding-left: 12px;
+      border-left: 3px solid var(--pink);
+      color: var(--text);
+    }
+
+    .muted { color: var(--muted); }
+    .error { color: var(--danger); }
+
+    @media (max-width: 920px) {
+      .layout { grid-template-columns: 1fr; }
+      header { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p id="api-status" class="status-pill">Connecting...</p>
+        <h1>Neon Agency Control Deck</h1>
+        <p class="subtitle">A local browser console for the agentic city NPC simulation.</p>
+      </div>
+      <button id="reset-button" type="button">Reset Simulation</button>
+    </header>
+
+    <div class="layout">
+      <section class="panel">
+        <h2>City Reputation</h2>
+        <div id="reputation"></div>
+      </section>
+
+      <section class="panel">
+        <h2>NPC State</h2>
+        <div id="entities"></div>
+      </section>
+
+      <section class="panel controls">
+        <div>
+          <h2>Player Action</h2>
+          <p class="subtitle">Choose a target, then push the city a little off balance.</p>
+        </div>
+        <label for="target-select">Target NPC</label>
+        <select id="target-select"></select>
+        <div class="action-grid">
+          <button data-action="help" type="button">Help</button>
+          <button data-action="attack" type="button">Attack</button>
+          <button data-action="steal" type="button">Steal</button>
+          <button data-action="threaten" type="button">Threaten</button>
+          <button data-action="talk" type="button">Talk</button>
+        </div>
+        <section>
+          <h2>Latest Reactions</h2>
+          <div id="reactions-log"><p class="muted">No actions yet.</p></div>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const reputationEl = document.querySelector('#reputation');
+    const entitiesEl = document.querySelector('#entities');
+    const targetSelect = document.querySelector('#target-select');
+    const reactionsLog = document.querySelector('#reactions-log');
+    const apiStatus = document.querySelector('#api-status');
+    const resetButton = document.querySelector('#reset-button');
+
+    const labelMap = {
+      player_violence_score: 'Violence',
+      player_kindness_score: 'Kindness',
+      player_theft_score: 'Theft',
+      police_attention: 'Police Attention',
+      civilian_trust: 'Civilian Trust'
+    };
+
+    async function parseJsonResponse(response) {
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || `Request failed: ${response.status}`);
+      }
+      return data;
+    }
+
+    async function loadState() {
+      try {
+        const response = await fetch('/state');
+        const state = await parseJsonResponse(response);
+        renderState(state);
+        renderResult(state.last_result);
+        setStatus('API connected', false);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    async function runAction(action) {
+      const target = targetSelect.value;
+      try {
+        setStatus(`Running ${action} on ${target}...`, false);
+        const response = await fetch('/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, target })
+        });
+        const result = await parseJsonResponse(response);
+        renderState(result.state);
+        renderResult(result);
+        setStatus('Action applied', false);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    async function resetSimulation() {
+      try {
+        const response = await fetch('/reset', { method: 'POST' });
+        const result = await parseJsonResponse(response);
+        renderState(result.state);
+        reactionsLog.innerHTML = '<p class="muted">Simulation reset. No actions yet.</p>';
+        setStatus('Simulation reset', false);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    function renderState(state) {
+      renderReputation(state.city_reputation);
+      renderEntities(state.entities);
+    }
+
+    function renderReputation(city_reputation) {
+      reputationEl.innerHTML = Object.entries(city_reputation)
+        .map(([key, value]) => `
+          <div class="metric">
+            <span>${labelMap[key] || key}</span>
+            <strong>${value}</strong>
+          </div>
+        `)
+        .join('');
+    }
+
+    function renderEntities(entities) {
+      const npcs = Object.values(entities).filter((entity) => entity.id !== 'player');
+      const currentTarget = targetSelect.value;
+      targetSelect.innerHTML = npcs
+        .map((entity) => `<option value="${entity.id}">${entity.name} (${entity.role})</option>`)
+        .join('');
+      if (npcs.some((entity) => entity.id === currentTarget)) {
+        targetSelect.value = currentTarget;
+      }
+
+      entitiesEl.innerHTML = npcs.map((entity) => {
+        const relationship = entity.relationship;
+        const latestMemory = entity.memories.at(-1);
+        return `
+          <article class="entity-card">
+            <h3>${entity.name}<span class="tag">${entity.role}</span></h3>
+            <p class="muted">${entity.id} · ${entity.location}</p>
+            <div class="relationship-grid">
+              <span>Trust: ${relationship.trust}</span>
+              <span>Fear: ${relationship.fear}</span>
+              <span>Resentment: ${relationship.resentment}</span>
+              <span>Familiarity: ${relationship.familiarity}</span>
+            </div>
+            <p class="muted">Memories: ${entity.memories.length}${latestMemory ? ` · latest ${latestMemory.perception} ${latestMemory.event_kind}` : ''}</p>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderResult(result) {
+      if (!result) {
+        reactionsLog.innerHTML = '<p class="muted">No actions yet.</p>';
+        return;
+      }
+
+      const event = result.event;
+      const reactions = Object.values(result.reactions);
+      reactionsLog.innerHTML = `
+        <article class="event-card">
+          <h3>${event.kind} → ${event.target_id}</h3>
+          <p class="muted">Severity ${event.severity} at ${event.location}; witnesses: ${event.direct_witness_ids.join(', ') || 'none'}</p>
+        </article>
+        ${reactions.map((reaction) => `
+          <article class="reaction-card">
+            <h3>${reaction.entity_id}</h3>
+            <p>Actions: <strong>${reaction.actions.join(' + ')}</strong></p>
+            <p class="muted">Reason: ${reaction.reason}</p>
+            ${reaction.dialogue ? `<blockquote>${reaction.dialogue}<br><span class="muted">source: ${reaction.dialogue_source}${reaction.dialogue_error ? ` · ${reaction.dialogue_error}` : ''}</span></blockquote>` : ''}
+          </article>
+        `).join('')}
+      `;
+    }
+
+    function setStatus(message, isError) {
+      apiStatus.textContent = message;
+      apiStatus.classList.toggle('error', isError);
+    }
+
+    document.querySelectorAll('[data-action]').forEach((button) => {
+      button.addEventListener('click', () => runAction(button.dataset.action));
+    });
+    resetButton.addEventListener('click', resetSimulation);
+    loadState();
+  </script>
+</body>
+</html>

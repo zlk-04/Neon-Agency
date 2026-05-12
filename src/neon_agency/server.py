@@ -1,5 +1,6 @@
 import argparse
 import json
+from importlib import resources
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from neon_agency.api import (
@@ -24,6 +25,13 @@ class NeonAgencyServer:
     def state(self):
         return handle_state_request(self.simulation, last_result=self.last_result)
 
+    def index_html(self):
+        return (
+            resources.files("neon_agency.web")
+            .joinpath("index.html")
+            .read_text(encoding="utf-8-sig")
+        )
+
     def action(self, payload):
         response = handle_action_request(
             self.simulation,
@@ -44,6 +52,9 @@ class NeonAgencyServer:
 def create_handler(api_server):
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
+            if self.path in {"/", "/index.html"}:
+                self._send_html(api_server.index_html())
+                return
             if self.path == "/state":
                 self._send_json(api_server.state())
                 return
@@ -85,6 +96,14 @@ def create_handler(api_server):
             body = json.dumps(response["body"], ensure_ascii=False).encode("utf-8")
             self.send_response(response["status"])
             self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _send_html(self, html):
+            body = html.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
