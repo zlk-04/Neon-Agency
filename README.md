@@ -59,6 +59,18 @@ POST /reset
 
 The API uses the same simulation engine as the CLI. It keeps one in-memory city state until `/reset` is called or the process exits.
 
+## Break the Script: NPC Intent Policy
+
+Neon Agency can optionally let an LLM propose NPC behavior as structured intent JSON. The world kernel still validates the action against an allowed action set and falls back to deterministic rules when the model returns invalid JSON, unsupported actions, or an error.
+
+This keeps NPCs from being hard-scripted while preserving world consistency: the model can decide what an NPC wants to do, but the simulation decides whether that behavior exists in this world.
+
+Run the web server with LLM-driven NPC intent enabled:
+
+```powershell
+.\.venv\Scripts\python.exe -m neon_agency.server --agent-decisions
+```
+
 ## DeepSeek Dialogue
 
 Template dialogue works without any API key. To enable DeepSeek-generated NPC lines, create a local `.env` file:

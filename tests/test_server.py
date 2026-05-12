@@ -1,4 +1,4 @@
-from neon_agency.server import NeonAgencyServer
+from neon_agency.server import NeonAgencyServer, select_server_providers
 
 
 def test_root_serves_web_ui_html():
@@ -31,3 +31,27 @@ def test_web_ui_calls_json_api_and_renders_simulation_concepts():
     assert "dialogue_source" in html
     assert "relationship" in html
     assert "memories" in html
+
+
+def test_agent_decision_provider_is_opt_in():
+    provider = object()
+
+    dialogue_provider, decision_provider = select_server_providers(
+        agent_decisions=False,
+        dialogue_provider=provider,
+    )
+
+    assert dialogue_provider is provider
+    assert decision_provider is None
+
+
+def test_agent_decision_provider_reuses_dialogue_provider_when_enabled():
+    provider = object()
+
+    dialogue_provider, decision_provider = select_server_providers(
+        agent_decisions=True,
+        dialogue_provider=provider,
+    )
+
+    assert dialogue_provider is provider
+    assert decision_provider is provider

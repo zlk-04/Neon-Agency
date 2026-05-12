@@ -17,10 +17,11 @@ DEFAULT_PORT = 8765
 
 
 class NeonAgencyServer:
-    def __init__(self, dialogue_provider=None):
+    def __init__(self, dialogue_provider=None, decision_provider=None):
         self.simulation = create_default_street()
         self.last_result = None
         self.dialogue_provider = dialogue_provider
+        self.decision_provider = decision_provider
 
     def state(self):
         return handle_state_request(self.simulation, last_result=self.last_result)
@@ -37,6 +38,7 @@ class NeonAgencyServer:
             self.simulation,
             payload,
             dialogue_provider=self.dialogue_provider,
+            decision_provider=self.decision_provider,
         )
         if response["status"] == 200:
             self.last_result = response["body"]["state"]["last_result"]
@@ -111,8 +113,11 @@ def create_handler(api_server):
     return Handler
 
 
-def run_server(host=DEFAULT_HOST, port=DEFAULT_PORT, dialogue_provider=None):
-    api_server = NeonAgencyServer(dialogue_provider=dialogue_provider)
+def run_server(host=DEFAULT_HOST, port=DEFAULT_PORT, dialogue_provider=None, decision_provider=None):
+    api_server = NeonAgencyServer(
+        dialogue_provider=dialogue_provider,
+        decision_provider=decision_provider,
+    )
     httpd = ThreadingHTTPServer((host, port), create_handler(api_server))
     print(f"Neon Agency JSON API running at http://{host}:{port}")
     try:
@@ -127,8 +132,27 @@ def main():
     parser = argparse.ArgumentParser(description="Run the Neon Agency local JSON API.")
     parser.add_argument("--host", default=DEFAULT_HOST)
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
+    parser.add_argument(
+        "--agent-decisions",
+        action="store_true",
+        help="Use the configured LLM provider for NPC behavior intents as well as dialogue.",
+    )
     args = parser.parse_args()
-    run_server(args.host, args.port, dialogue_provider=create_dialogue_provider())
+    dialogue_provider, decision_provider = select_server_providers(
+        agent_decisions=args.agent_decisions,
+        dialogue_provider=create_dialogue_provider(),
+    )
+    run_server(
+        args.host,
+        args.port,
+        dialogue_provider=dialogue_provider,
+        decision_provider=decision_provider,
+    )
+
+
+def select_server_providers(agent_decisions, dialogue_provider):
+    decision_provider = dialogue_provider if agent_decisions else None
+    return dialogue_provider, decision_provider
 
 
 def _not_found(path):

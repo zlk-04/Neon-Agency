@@ -27,7 +27,7 @@ def handle_state_request(simulation, last_result=None):
     return {"status": 200, "body": serialize_state(simulation, last_result=last_result)}
 
 
-def handle_action_request(simulation, payload, dialogue_provider=None):
+def handle_action_request(simulation, payload, dialogue_provider=None, decision_provider=None):
     action = payload.get("action") if isinstance(payload, dict) else None
     target = payload.get("target") if isinstance(payload, dict) else None
 
@@ -46,6 +46,7 @@ def handle_action_request(simulation, payload, dialogue_provider=None):
         action_kind=ACTION_ALIASES[action],
         target_id=target,
         dialogue_provider=dialogue_provider,
+        decision_provider=decision_provider,
     )
     body = serialize_result(result)
     body["state"] = serialize_state(simulation, last_result=serialize_result(result))

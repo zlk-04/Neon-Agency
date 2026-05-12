@@ -2,13 +2,18 @@ BASE_ACTIONS = {
     "acknowledge",
     "approve",
     "call_police",
+    "comfort_target",
     "confront",
+    "confront_player",
     "fight_back",
     "flee",
     "ignore",
     "question",
+    "question_player",
     "record_video",
+    "report_to_police",
     "thank",
+    "warn_player",
     "warmly_greet",
 }
 POLICE_ACTIONS = BASE_ACTIONS | {"investigate"}

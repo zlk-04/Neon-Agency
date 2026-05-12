@@ -227,3 +227,27 @@ def test_simulation_accepts_dialogue_provider():
     )
 
     assert result.reactions_by_entity["mira"].dialogue == "Generated from structured context."
+
+
+def test_simulation_accepts_decision_provider_for_npc_intent():
+    class DecisionProvider:
+        def generate(self, prompt):
+            return (
+                '{"action":"warn_player","target_id":"player",'
+                '"reason":"Mira trusts the player but worries about police involvement.",'
+                '"dialogue":"You keep helping people. Just be careful around Chen."}'
+            )
+
+    simulation = create_default_street()
+
+    result = simulate_player_action(
+        simulation,
+        action_kind="help",
+        target_id="officer_chen",
+        decision_provider=DecisionProvider(),
+    )
+
+    assert result.reactions_by_entity["mira"].actions == ("warn_player",)
+    assert result.reactions_by_entity["mira"].reason == "Mira trusts the player but worries about police involvement."
+    assert result.reactions_by_entity["mira"].dialogue == "You keep helping people. Just be careful around Chen."
+    assert result.reactions_by_entity["mira"].dialogue_source == "deepseek"

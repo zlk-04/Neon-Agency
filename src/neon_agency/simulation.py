@@ -1,3 +1,4 @@
+from neon_agency.agent_policy import decide_agent_reaction
 from neon_agency.decision import decide_reaction
 from neon_agency.dialogue import generate_dialogue_result
 from neon_agency.events import AssaultEvent, PlayerActionEvent
@@ -67,7 +68,7 @@ def simulate_player_assault(simulation, target_id):
     return simulate_player_action(simulation, action_kind="assault", target_id=target_id)
 
 
-def simulate_player_action(simulation, action_kind, target_id, dialogue_provider=None):
+def simulate_player_action(simulation, action_kind, target_id, dialogue_provider=None, decision_provider=None):
     if action_kind not in ACTION_SEVERITY:
         raise ValueError(f"Unsupported action kind: {action_kind}")
 
@@ -94,13 +95,24 @@ def simulate_player_action(simulation, action_kind, target_id, dialogue_provider
     perceptions = perceive_event(simulation, event)
     _apply_relationships(simulation, event, perceptions)
     reactions = {
-        entity_id: decide_reaction(simulation.entities[entity_id], event, perception)
+        entity_id: _decide_reaction(
+            simulation.entities[entity_id],
+            event,
+            perception,
+            decision_provider=decision_provider,
+        )
         for entity_id, perception in perceptions.items()
     }
     reactions = _attach_dialogue(simulation, event, reactions, dialogue_provider)
     _apply_reputation(simulation, event, reactions)
 
     return SimulationResult(event=event, reactions_by_entity=reactions)
+
+
+def _decide_reaction(entity, event, perception, decision_provider=None):
+    if decision_provider is None:
+        return decide_reaction(entity, event, perception)
+    return decide_agent_reaction(entity, event, perception, provider=decision_provider)
 
 
 def _apply_relationships(simulation, event, perceptions):
@@ -113,6 +125,9 @@ def _apply_relationships(simulation, event, perceptions):
 def _attach_dialogue(simulation, event, reactions, dialogue_provider=None):
     reactions_with_dialogue = {}
     for entity_id, reaction in reactions.items():
+        if reaction.dialogue:
+            reactions_with_dialogue[entity_id] = reaction
+            continue
         dialogue = generate_dialogue_result(
             simulation.entities[entity_id],
             event,

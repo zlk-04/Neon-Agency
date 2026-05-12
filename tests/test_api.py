@@ -97,3 +97,25 @@ def test_server_keeps_last_result_available_after_action():
 
     assert response["status"] == 200
     assert response["body"]["last_result"]["event"]["kind"] == "help"
+
+
+def test_handle_action_request_accepts_decision_provider():
+    class DecisionProvider:
+        def generate(self, prompt):
+            return (
+                '{"action":"warn_player","target_id":"player",'
+                '"reason":"Mira chooses her own response.",'
+                '"dialogue":"Careful. This city remembers who you help."}'
+            )
+
+    simulation = create_default_street()
+
+    response = handle_action_request(
+        simulation,
+        {"action": "help", "target": "officer_chen"},
+        decision_provider=DecisionProvider(),
+    )
+
+    assert response["status"] == 200
+    assert response["body"]["reactions"]["mira"]["actions"] == ["warn_player"]
+    assert response["body"]["reactions"]["mira"]["dialogue"] == "Careful. This city remembers who you help."
