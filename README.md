@@ -39,6 +39,24 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m neon_agency.main
 ```
 
+## Run Local JSON API
+
+```powershell
+.\.venv\Scripts\python.exe -m neon_agency.server
+```
+
+Default address: `http://127.0.0.1:8765`
+
+Endpoints:
+
+```txt
+GET /state
+POST /action  {"action": "help", "target": "mira"}
+POST /reset
+```
+
+The API uses the same simulation engine as the CLI. It keeps one in-memory city state until `/reset` is called or the process exits.
+
 ## DeepSeek Dialogue
 
 Template dialogue works without any API key. To enable DeepSeek-generated NPC lines, create a local `.env` file:
